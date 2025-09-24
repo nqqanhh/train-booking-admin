@@ -11,16 +11,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-api.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    if (err.response?.status === 401) {
-      // TODO: optional refresh token flow
-      localStorage.removeItem("access_token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(err);
-  }
-);
+// api.interceptors.response.use(
+//   (res) => res,
+//   async (err) => {
+//     if (err.response?.status === 401) {
+//       // TODO: optional refresh token flow
+//       localStorage.removeItem("access_token");
+//       window.location.href = "/login";
+//     }
+//     return Promise.reject(err);
+//   }
+// );
 
 export default api;

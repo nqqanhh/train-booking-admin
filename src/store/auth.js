@@ -6,5 +6,6 @@ export const useAuth = create((set) => ({
   logout: () => {
     localStorage.removeItem("access_token");
     set({ user: null });
+    window.location.href = "/login";
   },
 }));

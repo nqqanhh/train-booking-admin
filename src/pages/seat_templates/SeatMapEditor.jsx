@@ -92,24 +92,35 @@ export default function SeatMapEditor() {
     }
   };
 
-  const onRemoveSeat = (seat) => {
-    setSeats((prev) =>
-      prev.filter(
-        (s) =>
-          !(
-            s.pos_row === seat.pos_row &&
-            s.pos_col === seat.pos_col &&
-            s.seat_code === seat.seat_code
-          )
-      )
-    );
-    if (
-      selected &&
-      selected.pos_row === seat.pos_row &&
-      selected.pos_col === seat.pos_col
-    ) {
-      setSelected(null);
-      form.resetFields();
+  // const onRemoveSeat = async (seat) => {
+  //   setSeats((prev) =>
+  //     prev.filter(
+  //       (s) =>
+  //         !(
+  //           s.pos_row === seat.pos_row &&
+  //           s.pos_col === seat.pos_col &&
+  //           s.seat_code === seat.seat_code
+  //         )
+  //     )
+  //   );
+  //   if (
+  //     selected &&
+  //     selected.pos_row === seat.pos_row &&
+  //     selected.pos_col === seat.pos_col
+  //   ) {
+  //     await api.post(`/seat-templates/${id}/seats/${s.id}`);
+  //     setSelected(null);
+  //     form.resetFields();
+  //   }
+  // };
+
+  const handleDeleteSeat = async (seat) => {
+    try {
+      await api.post(`/seat-templates/delete-seat/${id}/seats/${seat.id}`);
+      message.success("Seat deleted");
+      await load();
+    } catch (error) {
+      message.error(error.response?.data?.message || "Delete failed");
     }
   };
 
@@ -177,6 +188,24 @@ export default function SeatMapEditor() {
     }
   };
 
+  const handleUpdateSeat = async () => {
+    try {
+      const v = form.getFieldsValue();
+      if (!selected?.id) {
+        return message.warning(
+          "Seat chưa tồn tại trong DB. Hãy dùng Save All để tạo mới trước."
+        );
+      }
+      await api.post(
+        `seat-templates/update-seat/${id}/seats/${selected.id}`,
+        v
+      );
+      message.success("Seat updated successsfully");
+      await load();
+    } catch (error) {
+      message.error(error.response?.data?.message || "Update failed");
+    }
+  };
   const Grid = () => (
     <div
       style={{
@@ -252,7 +281,7 @@ export default function SeatMapEditor() {
                   title="Remove this seat?"
                   onConfirm={(e) => {
                     e?.stopPropagation?.();
-                    onRemoveSeat(seat);
+                    handleDeleteSeat(seat);
                   }}
                   onCancel={(e) => e?.stopPropagation?.()}
                 >
@@ -433,6 +462,14 @@ export default function SeatMapEditor() {
             >
               Clear
             </Button>
+            <Button
+              type="primary"
+              onClick={handleUpdateSeat}
+              disabled={!selected?.id}
+            >
+              Save Seat
+            </Button>
+
             <Button
               type="primary"
               onClick={handleSave}

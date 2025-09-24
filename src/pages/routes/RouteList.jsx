@@ -22,7 +22,7 @@ function RouteList() {
   const fetchRoutes = async () => {
     setLoading(true);
     try {
-      const { data } = api.get("/routes");
+      const { data } = await api.get("/routes");
       setRows(data.items || data);
     } finally {
       setLoading(false);
@@ -39,38 +39,37 @@ function RouteList() {
 
   const onEdit = (rec) => {
     setEditing(rec);
-    form.setFieldValue(rec);
+    form.setFieldsValue({ ...rec, active: rec.isActive || rec.active });
     setOpen(true);
   };
 
   const onSubmit = async () => {
     const validate = await form.validateFields();
+    console.log("Form data:", validate);
     try {
       if (editing) {
-        await api.post(`/routes/update/${editing.id}`, {
+        console.log("Updating route with ID:", editing.id);
+        const response = await api.post(`/routes/update/${editing.id}`, {
           origin: validate.origin,
           destination: validate.destination,
           distance_km: validate.distance_km,
           eta_minutes: validate.eta_minutes,
-          isActive: validate.isActive,
+          isActive: validate.active,
         });
+        console.log("Update response:", response.data);
         message.success("Updated");
       } else {
-        await api.post("/routes/create", validate);
+        console.log("Creating new route");
+        const response = await api.post("/routes/create", validate);
+        console.log("Create response:", response.data);
         message.success("Route created");
       }
       setOpen(false);
-      load();
+      fetchRoutes();
     } catch (error) {
+      console.error("Error:", error);
       message.error(error.response?.data?.message || "Save failed");
     }
-  };
-
-  const onDelete = async (rec) => {
-    Modal.confirm({
-      title: `Delete route ${rec.origin}-${rec.destination}?`,
-      onOk: async () => [await api.post("/routes/delete")],
-    });
   };
 
   const cols = [
@@ -87,9 +86,6 @@ function RouteList() {
           <Button size="small" onClick={() => onEdit(rec)}>
             Edit
           </Button>
-          <Button size="small" danger onClick={() => onDelete(rec)}>
-            Delete
-          </Button>
         </Space>
       ),
     },
@@ -97,7 +93,7 @@ function RouteList() {
   return (
     <>
       <Space>
-        <Button>New Route</Button>
+        <Button onClick={onCreate}>New Route</Button>
       </Space>
       <Table
         rowkey="id"
