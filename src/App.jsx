@@ -1,35 +1,76 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { ConfigProvider, Layout, Menu } from "antd";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Login from "./pages/auth/Login.jsx";
+import Dashboard from "./pages/dashboard/Dashboard.jsx";
+import RoutesList from "./pages/routes/RouteList.jsx";
+import SeatTemplatesList from "./pages/seat_templates/SeatTemplatesList.jsx";
+import SeatMapEditor from "./pages/seat_templates/SeatMapEditor.jsx";
+import TripsList from "./pages/trips/TripsList.jsx";
+import OrdersList from "./pages/orders/OrdersList.jsx";
+import UsersList from "./pages/users/UsersList.jsx";
 
-function App() {
-  const [count, setCount] = useState(0)
+const { Header, Sider, Content } = Layout;
 
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ConfigProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="*"
+            element={
+              // <ProtectedRoute roles={["admin"]}>
+              <Layout style={{ minHeight: "100vh" }}>
+                <Sider theme="light">
+                  <Menu mode="inline">
+                    <Menu.Item key="dash">
+                      <Link to="/">Dashboard</Link>
+                    </Menu.Item>
+                    <Menu.Item key="routes-managing">
+                      <Link to="/routes-managing">Routes</Link>
+                    </Menu.Item>
+                    <Menu.Item key="seatTpl">
+                      <Link to="/seat-templates">Seat Templates</Link>
+                    </Menu.Item>
+                    <Menu.Item key="trips">
+                      <Link to="/trips">Trips</Link>
+                    </Menu.Item>
+                    <Menu.Item key="orders">
+                      <Link to="/orders">Orders</Link>
+                    </Menu.Item>
+                    <Menu.Item key="users">
+                      <Link to="/users">Users</Link>
+                    </Menu.Item>
+                  </Menu>
+                </Sider>
+                <Layout>
+                  <Header style={{ background: "#fff" }} />
+                  <Content style={{ padding: 24 }}>
+                    <Routes>
+                      <Route index element={<Dashboard />} />
+                      <Route path="routes-managing" element={<RoutesList />} />
+                      <Route
+                        path="seat-templates"
+                        element={<SeatTemplatesList />}
+                      />
+                      <Route
+                        path="seat-templates/:id/seatmap"
+                        element={<SeatMapEditor />}
+                      />
+                      <Route path="trips" element={<TripsList />} />
+                      <Route path="orders" element={<OrdersList />} />
+                      <Route path="users" element={<UsersList />} />
+                    </Routes>
+                  </Content>
+                </Layout>
+              </Layout>
+              // </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </ConfigProvider>
+  );
 }
-
-export default App
