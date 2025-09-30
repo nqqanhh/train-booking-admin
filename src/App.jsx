@@ -10,8 +10,11 @@ import TripsList from "./pages/trips/TripsList.jsx";
 import SeatTemplatesList from "./pages/seat_templates/SeatTemplatesList.jsx";
 import SeatMapEditor from "./pages/seat_templates/SeatMapEditor.jsx"; // bạn đã có
 import OrdersList from "./pages/orders/OrdersList.jsx";
+import OrderDetail from "./pages/orders/OrderDetail.jsx";
+import SeatMapByCarriage from "./pages/trips/SeatMapByCarriage.jsx";
 // import PaymentsList from "./pages/payments/PaymentsList";
-// import TicketsList from "./pages/tickets/TicketsList";
+import TicketsList from "./pages/tickets/TicketsList.jsx";
+import TicketDetail from "./pages/tickets/TicketDetail.jsx";
 // import SupportList from "./pages/support/SupportList";
 // import NotificationsList from "./pages/notifications/NotificationsList";
 
@@ -62,6 +65,17 @@ export default function App() {
           }
         />
         <Route
+          path="/trips/:id/seatmap-by-carriage"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminLayout>
+                <SeatMapByCarriage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/seat-templates"
           element={
             <ProtectedRoute roles={["admin"]}>
@@ -91,6 +105,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/orders/:id"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminLayout>
+                <OrderDetail />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
         {/* <Route
           path="/payments"
           element={
@@ -101,7 +125,7 @@ export default function App() {
             </ProtectedRoute>
           }
         /> */}
-        {/* <Route
+        <Route
           path="/tickets"
           element={
             <ProtectedRoute roles={["admin"]}>
@@ -111,6 +135,17 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/tickets/:id"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminLayout>
+                <TicketDetail />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        {/*
         <Route
           path="/support"
           element={

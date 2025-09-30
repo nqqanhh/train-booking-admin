@@ -41,7 +41,15 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        minWidth: "100vw",
+        display: "grid",
+        placeItems: "center",
+        backgroundColor: "#5A8CFF",
+      }}
+    >
       <Card style={{ width: 380 }}>
         <Title level={4} style={{ textAlign: "center", marginBottom: 16 }}>
           Admin Login

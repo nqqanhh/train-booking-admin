@@ -1,144 +1,285 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Table,
   Button,
+  Card,
+  Popconfirm,
   Space,
+  Table,
+  Tag,
+  message,
   Modal,
   Form,
   Input,
-  InputNumber,
-  Switch,
-  message,
+  DatePicker,
+  Select,
 } from "antd";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../../api/axios";
+import dayjs from "dayjs";
+import { redirect } from "react-router-dom";
 
-function TripsList() {
+export default function TripsList() {
   const [rows, setRows] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [form] = Form.useForm();
+
+  const navigate = useNavigate();
   const fetchTrips = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/trips`);
+      const { data } = await api.get("/trips");
       setRows(data.trips || data);
-    } catch (error) {
-      message.error();
+    } catch (err) {
+      message.error("Load trips failed");
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchRoutes = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/routes");
+      setRoutes(data.items || data);
+    } catch (err) {
+      message.error("Load routes failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTrips();
+    fetchRoutes();
   }, []);
-  const onCreate = () => {
-    setEditing(null);
-    form.resetFields();
-    setOpen(true);
+
+  // Map nhanh routeId -> "origin → destination"
+  const routeLabelById = useMemo(() => {
+    const m = new Map();
+    for (const r of routes) {
+      m.set(r.id, `${r.origin} → ${r.destination}`);
+    }
+    return m;
+  }, [routes]);
+
+  // Options cho Select routes (value = id, label = origin→destination)
+  const routeOptions = useMemo(
+    () =>
+      routes.map((r) => ({
+        value: r.id,
+        label: `${r.origin} → ${r.destination}`,
+      })),
+    [routes]
+  );
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/trips/${id}`);
+      message.success("Deleted trip");
+      await fetchTrips();
+    } catch {
+      message.error("Delete failed");
+    }
   };
 
-  const onEdit = (rec) => {
-    setEditing(rec);
-    form.setFieldValue(rec);
-    setOpen(true);
+  const handleSave = async () => {
+    try {
+      const v = await form.validateFields();
+      const payload = {
+        ...v, // v.route_id là id (Select value), BE nhận route_id bình thường
+        departure_time: v.departure_time.format("YYYY-MM-DD HH:mm:ss"),
+        arrival_time: v.arrival_time.format("YYYY-MM-DD HH:mm:ss"),
+      };
+      if (editing) {
+        await api.post(`/trips/${editing.id}/update`, payload);
+        message.success("Updated trip");
+      } else {
+        await api.post("/trips/create", payload);
+        message.success("Created trip");
+      }
+      setOpen(false);
+      await fetchTrips();
+    } catch (e) {
+      message.error(e.response?.data?.message || "Save failed");
+    }
   };
 
-  // const onSubmit = async () => {
-  //   const validate = await form.validateFields();
-  //   try {
-  //     if (editing) {
-  //       await api.post(`/routes/update/${editing.id}`, {
-  //         origin: validate.origin,
-  //         destination: validate.destination,
-  //         distance_km: validate.distance_km,
-  //         eta_minutes: validate.eta_minutes,
-  //         isActive: validate.isActive,
-  //       });
-  //       message.success("Updated");
-  //     } else {
-  //       await api.post("/routes/create", validate);
-  //       message.success("Route created");
-  //     }
-  //     setOpen(false);
-  //     load();
-  //   } catch (error) {
-  //     message.error(error.response?.data?.message || "Save failed");
-  //   }
-  // };
-
-  // const onDelete = async (rec) => {
-  //   Modal.confirm({
-  //     title: `Delete route ${rec.origin}-${rec.destination}?`,
-  //     onOk: async () => [await api.post("/routes/delete")],
-  //   });
-  // };
-  const cols = [
+  const columns = [
     { title: "ID", dataIndex: "id", width: 80 },
-    { title: "Departure time", dataIndex: "departure_time" },
-    { title: "Arrival time", dataIndex: "arrival_time" },
-    { title: "Train no", dataIndex: "vehicle_no" },
-    { title: "status", dataIndex: "status" },
     {
-      title: "Seat template",
-      dataIndex: "seat_template_id",
+      title: "Route",
+      dataIndex: "route_id",
+      render: (_, r) => {
+        // ưu tiên dùng r.route nếu BE đã include
+        if (r.route?.origin && r.route?.destination) {
+          return `${r.route.origin} → ${r.route.destination}`;
+        }
+        // fallback map từ route_id
+        return routeLabelById.get(r.route_id) || `#${r.route_id}`;
+      },
+    },
+    {
+      title: "Departure",
+      dataIndex: "departure_time",
+      render: (t) => (t ? dayjs(t).format("DD/MM/YYYY HH:mm") : "-"),
+    },
+    {
+      title: "Arrival",
+      dataIndex: "arrival_time",
+      render: (t) => (t ? dayjs(t).format("DD/MM/YYYY HH:mm") : "-"),
+    },
+    { title: "Vehicle", dataIndex: "vehicle_no" },
+    {
+      title: "Status",
+      dataIndex: "status",
+      render: (s) => (
+        <Tag
+          color={
+            s === "scheduled" ? "blue" : s === "completed" ? "green" : "red"
+          }
+        >
+          {s}
+        </Tag>
+      ),
     },
     {
       title: "Actions",
-      render: (_, rec) => (
+      render: (_, r) => (
         <Space>
-          <Button size="small" onClick={() => onEdit(rec)}>
+          <Button
+            onClick={() => navigate(`/trips/${r.id}/seatmap-by-carriage`)}
+          >
+            View carriages
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(r);
+              form.setFieldsValue({
+                // ensure route_id là ID số
+                route_id: r.route_id,
+                seat_template_id: r.seat_template_id,
+                vehicle_no: r.vehicle_no,
+                status: r.status || "scheduled",
+                departure_time: r.departure_time
+                  ? dayjs(r.departure_time)
+                  : null,
+                arrival_time: r.arrival_time ? dayjs(r.arrival_time) : null,
+              });
+              setOpen(true);
+            }}
+          >
             Edit
           </Button>
-          <Button size="small" danger onClick={() => onDelete(rec)}>
-            Delete
-          </Button>
+          <Popconfirm
+            title="Delete this trip?"
+            onConfirm={() => handleDelete(r.id)}
+          >
+            <Button danger>Delete</Button>
+          </Popconfirm>
         </Space>
       ),
     },
   ];
+
   return (
-    <>
-      <Space>
-        <Button>New Route</Button>
-      </Space>
+    <Card
+      title="Trips"
+      extra={
+        <Button
+          type="primary"
+          onClick={() => {
+            setEditing(null);
+            form.resetFields();
+            setOpen(true);
+          }}
+        >
+          Add Trip
+        </Button>
+      }
+    >
       <Table
-        rowkey="id"
-        loading={loading}
-        columns={cols}
+        rowKey="id"
         dataSource={rows}
-      ></Table>
+        columns={columns}
+        loading={loading}
+      />
 
       <Modal
+        title={editing ? "Edit Trip" : "Add Trip"}
         open={open}
         onCancel={() => setOpen(false)}
-        onOk={() => console.log("submit")}
-        title={editing ? "Edit Route" : "New Route"}
+        onOk={handleSave}
+        destroyOnClose
       >
-        <Form layout="vertical" form={form} initialValues={{ active: true }}>
-          <Form.Item name="origin" label="Origin" rules={[{ required: true }]}>
-            <Input />
+        <Form form={form} layout="vertical">
+          {/* Route Select: hiển thị origin→destination, submit value là id */}
+          <Form.Item name="route_id" label="Route" rules={[{ required: true }]}>
+            <Select
+              showSearch
+              placeholder="Select route"
+              options={routeOptions}
+              filterOption={(input, option) =>
+                (option?.label ?? "")
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+            />
           </Form.Item>
+
+          {/* Seat Template ID tạm để nhập số. Có thể fetch template list tương tự routes */}
           <Form.Item
-            name="destination"
-            label="Destination"
+            name="seat_template_id"
+            label="Seat Template ID"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="e.g. 1" />
+          </Form.Item>
+
+          <Form.Item
+            name="departure_time"
+            label="Departure"
+            rules={[{ required: true }]}
+          >
+            <DatePicker showTime style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
+            name="arrival_time"
+            label="Arrival"
+            rules={[{ required: true }]}
+          >
+            <DatePicker showTime style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
+            name="vehicle_no"
+            label="Vehicle No"
             rules={[{ required: true }]}
           >
             <Input />
           </Form.Item>
-          <Form.Item name="distance_km" label="Distance (km)">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="eta_minutes" label="ETA (min)">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="active" label="Active" valuePropName="checked">
-            <Switch />
+
+          <Form.Item
+            name="status"
+            label="Status"
+            rules={[{ required: true }]}
+            initialValue="scheduled"
+          >
+            <Select
+              options={["scheduled", "closed", "cancelled", "completed"].map(
+                (v) => ({
+                  label: v,
+                  value: v,
+                })
+              )}
+            />
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </Card>
   );
 }
-
-export default TripsList;

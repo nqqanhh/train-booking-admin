@@ -18,7 +18,7 @@ import {
 } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../store/auth";
-// import { trainLogo } from "../assets/simple_train_booking_app_icon.jpg";
+import trainLogo from "../assets/simple_train_booking_app_icon.jpg";
 
 const { Header, Sider, Content } = Layout;
 
@@ -46,7 +46,7 @@ const items = [
   {
     key: "/seat-templates",
     icon: <AppstoreOutlined />,
-    label: <Link to="/seat-templates">Seat Templates</Link>,
+    label: <Link to="/seat-templates">Seat Map</Link>,
   },
   {
     key: "/orders",
@@ -95,7 +95,9 @@ export default function AdminLayout({ children }) {
         collapsed={collapsed}
         trigger={null}
         width={220}
-        style={{ borderRight: "1px solid #f0f0f0" }}
+        style={{
+          borderRight: "1px solid #f0f0f0",
+        }}
       >
         <div
           style={{
@@ -109,7 +111,21 @@ export default function AdminLayout({ children }) {
             gap: 8,
           }}
         >
-          {collapsed ? "dddd" : "Train Admin"}
+          {collapsed ? (
+            <img src={trainLogo} width={"70%"} />
+          ) : (
+            <p
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <img src={trainLogo} width={"20%"} height={"20%"} />
+              Admin
+            </p>
+          )}
         </div>
         <Menu mode="inline" selectedKeys={selectedKeys} items={items} />
       </Sider>

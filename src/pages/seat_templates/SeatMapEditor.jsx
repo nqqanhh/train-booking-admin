@@ -1,3 +1,4 @@
+// src/pages/seat_templates/SeatMapEditor.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -35,8 +36,6 @@ export default function SeatMapEditor() {
       setSeats(data.seats || []);
       setSelected(null);
       form.resetFields();
-
-      // sync form rows/cols
       const r = Number(data?.template?.meta_json?.rows || 0);
       const c = Number(data?.template?.meta_json?.cols || 0);
       layoutForm.setFieldsValue({ rows: r, cols: c });
@@ -48,7 +47,7 @@ export default function SeatMapEditor() {
   };
 
   useEffect(() => {
-    load(); // eslint-disable-next-line
+    load(); /* eslint-disable-next-line */
   }, [id]);
 
   const rows = Number(tpl?.meta_json?.rows || 0);
@@ -92,31 +91,27 @@ export default function SeatMapEditor() {
     }
   };
 
-  // const onRemoveSeat = async (seat) => {
-  //   setSeats((prev) =>
-  //     prev.filter(
-  //       (s) =>
-  //         !(
-  //           s.pos_row === seat.pos_row &&
-  //           s.pos_col === seat.pos_col &&
-  //           s.seat_code === seat.seat_code
-  //         )
-  //     )
-  //   );
-  //   if (
-  //     selected &&
-  //     selected.pos_row === seat.pos_row &&
-  //     selected.pos_col === seat.pos_col
-  //   ) {
-  //     await api.post(`/seat-templates/${id}/seats/${s.id}`);
-  //     setSelected(null);
-  //     form.resetFields();
-  //   }
-  // };
-
   const handleDeleteSeat = async (seat) => {
     try {
-      await api.post(`/seat-templates/delete-seat/${id}/seats/${seat.id}`);
+      if (!seat?.id) {
+        // nếu ghế mới chưa lưu DB → xoá khỏi state thôi
+        setSeats((prev) =>
+          prev.filter(
+            (s) =>
+              !(
+                s.pos_row === seat.pos_row &&
+                s.pos_col === seat.pos_col &&
+                s.seat_code === seat.seat_code
+              )
+          )
+        );
+        if (selected?.seat_code === seat.seat_code) {
+          setSelected(null);
+          form.resetFields();
+        }
+        return;
+      }
+      await api.post(`/seat-templates/${id}/seats/${seat.id}`);
       message.success("Seat deleted");
       await load();
     } catch (error) {
@@ -143,16 +138,16 @@ export default function SeatMapEditor() {
     );
   };
 
-  const handleSave = async () => {
+  const handleSaveAll = async () => {
     try {
       const payload = seats.map((s) => ({
         seat_code: String(s.seat_code).trim(),
-        seat_class: String(s.seat_class).toLowerCase(),
+        seat_class: String(s.seat_class || "standard").toLowerCase(),
         base_price: Number(s.base_price),
         pos_row: Number(s.pos_row),
         pos_col: Number(s.pos_col),
+        id: s.id ?? undefined,
       }));
-
       for (const r of payload) {
         if (
           !r.seat_code ||
@@ -166,11 +161,7 @@ export default function SeatMapEditor() {
           );
         }
       }
-
-      await api.post(
-        `/seat-templates/upsert-seats/${id}/seats/upsert`,
-        payload
-      );
+      await api.post(`/seat-templates/${id}/seats`, payload);
       message.success("Saved seats");
       await load();
     } catch (e) {
@@ -180,7 +171,9 @@ export default function SeatMapEditor() {
 
   const handleSaveLayout = async (values) => {
     try {
-      await api.patch(`/seat-templates/${id}`, values);
+      await api.patch(`/seat-templates/${id}`, {
+        meta_json: { rows: values.rows, cols: values.cols },
+      });
       message.success("Layout updated");
       await load();
     } catch (e) {
@@ -196,16 +189,20 @@ export default function SeatMapEditor() {
           "Seat chưa tồn tại trong DB. Hãy dùng Save All để tạo mới trước."
         );
       }
-      await api.post(
-        `seat-templates/update-seat/${id}/seats/${selected.id}`,
-        v
-      );
-      message.success("Seat updated successsfully");
+      await api.patch(`/seat-templates/${id}/seats/${selected.id}`, {
+        seat_code: v.seat_code,
+        seat_class: v.seat_class,
+        base_price: Number(v.base_price),
+        pos_row: Number(v.pos_row),
+        pos_col: Number(v.pos_col),
+      });
+      message.success("Seat updated");
       await load();
     } catch (error) {
       message.error(error.response?.data?.message || "Update failed");
     }
   };
+
   const Grid = () => (
     <div
       style={{
@@ -309,7 +306,6 @@ export default function SeatMapEditor() {
 
   return (
     <Space align="start" size={24} wrap>
-      {/* Seat map + legend */}
       <Card
         title={
           <Space>
@@ -323,7 +319,7 @@ export default function SeatMapEditor() {
         extra={
           <Space>
             <Button onClick={load}>Reload</Button>
-            <Button type="primary" onClick={handleSave}>
+            <Button type="primary" onClick={handleSaveAll}>
               Save
             </Button>
           </Space>
@@ -373,17 +369,8 @@ export default function SeatMapEditor() {
         )}
       </Card>
 
-      {/* Form chỉnh rows/cols */}
       <Card title="Template Layout" style={{ minWidth: 260 }}>
-        <Form
-          form={layoutForm}
-          layout="vertical"
-          initialValues={{
-            rows: tpl?.meta_json?.rows,
-            cols: tpl?.meta_json?.cols,
-          }}
-          onFinish={handleSaveLayout}
-        >
+        <Form form={layoutForm} layout="vertical" onFinish={handleSaveLayout}>
           <Form.Item
             name="rows"
             label="Rows"
@@ -404,7 +391,6 @@ export default function SeatMapEditor() {
         </Form>
       </Card>
 
-      {/* Panel chi tiết ghế */}
       <Card title="Seat Details" style={{ minWidth: 360 }}>
         <Form
           layout="vertical"
@@ -442,7 +428,6 @@ export default function SeatMapEditor() {
           >
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
-
           <Space>
             <Form.Item name="pos_row" label="Row" rules={[{ required: true }]}>
               <InputNumber min={1} max={rows || 999} />
@@ -451,7 +436,6 @@ export default function SeatMapEditor() {
               <InputNumber min={1} max={cols || 999} />
             </Form.Item>
           </Space>
-
           <Divider />
           <Space>
             <Button
@@ -469,10 +453,9 @@ export default function SeatMapEditor() {
             >
               Save Seat
             </Button>
-
             <Button
               type="primary"
-              onClick={handleSave}
+              onClick={handleSaveAll}
               disabled={!seats.length}
             >
               Save All
