@@ -17,6 +17,7 @@ import TicketsList from "./pages/tickets/TicketsList.jsx";
 import TicketDetail from "./pages/tickets/TicketDetail.jsx";
 // import SupportList from "./pages/support/SupportList";
 // import NotificationsList from "./pages/notifications/NotificationsList";
+import TripSchedulesList from "./pages/schedules/TripSchedulesList.jsx";
 
 export default function App() {
   return (
@@ -166,6 +167,16 @@ export default function App() {
             </ProtectedRoute>
           }
         /> */}
+        <Route
+          path="/trip-schedules"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminLayout>
+                <TripSchedulesList />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

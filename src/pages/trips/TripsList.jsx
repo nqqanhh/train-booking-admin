@@ -95,7 +95,7 @@ export default function TripsList() {
         arrival_time: v.arrival_time.format("YYYY-MM-DD HH:mm:ss"),
       };
       if (editing) {
-        await api.post(`/trips/${editing.id}/update`, payload);
+        await api.patch(`/trips/${editing.id}`, payload);
         message.success("Updated trip");
       } else {
         await api.post("/trips/create", payload);
@@ -213,7 +213,7 @@ export default function TripsList() {
         open={open}
         onCancel={() => setOpen(false)}
         onOk={handleSave}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical">
           {/* Route Select: hiển thị origin→destination, submit value là id */}
@@ -228,15 +228,6 @@ export default function TripsList() {
                   .includes(input.toLowerCase())
               }
             />
-          </Form.Item>
-
-          {/* Seat Template ID tạm để nhập số. Có thể fetch template list tương tự routes */}
-          <Form.Item
-            name="seat_template_id"
-            label="Seat Template ID"
-            rules={[{ required: true }]}
-          >
-            <Input placeholder="e.g. 1" />
           </Form.Item>
 
           <Form.Item

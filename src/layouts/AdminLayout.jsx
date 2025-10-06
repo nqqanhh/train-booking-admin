@@ -44,6 +44,11 @@ const items = [
     label: <Link to="/trips">Trips</Link>,
   },
   {
+    key: "/trip-schedules",
+    icon: <ScheduleOutlined />,
+    label: <Link to="/trip-schedules">Trip Schedules</Link>,
+  },
+  {
     key: "/seat-templates",
     icon: <AppstoreOutlined />,
     label: <Link to="/seat-templates">Seat Map</Link>,
@@ -127,7 +132,7 @@ export default function AdminLayout({ children }) {
             </p>
           )}
         </div>
-        <Menu mode="inline" selectedKeys={selectedKeys} items={items} />
+        <Menu mode="inline" selectedKeys={selectedKeys} items={items}  />
       </Sider>
 
       <Layout style={{ maxWidth: "90vw", width: "85vw" }}>
