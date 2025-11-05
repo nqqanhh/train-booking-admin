@@ -1,4 +1,4 @@
-import { Card, message, Table, Tag, Space } from "antd";
+import { Card, message, Table, Tag, Space, Popconfirm, Button } from "antd";
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 
@@ -22,6 +22,22 @@ function UsersList() {
     fetchUsers();
   }, []);
 
+  const handleToggleStatus = async (id) => {
+    setLoading(true);
+    try {
+      await api.post(`/profile/${id}`);
+      // Refresh data after successful update
+      await fetchUsers();
+      message.success("User status updated successfully");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Set user status failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    handleToggleStatus;
+  }, []);
   const columns = [
     { title: "ID", dataIndex: "id", width: 80 },
 
@@ -74,12 +90,16 @@ function UsersList() {
           >
             Edit
           </Button> */}
-          {/* <Popconfirm
-            title="Delete this trip?"
-            onConfirm={() => handleDelete(r.id)}
+          <Popconfirm
+            title="Confirm?"
+            onConfirm={() => handleToggleStatus(r.id)}
           >
-            <Button danger>Delete</Button>
-          </Popconfirm> */}
+            {r.status === "active" ? (
+              <Button danger>Ban user</Button>
+            ) : (
+              <Button primary>Active user</Button>
+            )}
+          </Popconfirm>
         </Space>
       ),
     },
