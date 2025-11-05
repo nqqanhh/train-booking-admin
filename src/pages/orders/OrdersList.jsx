@@ -7,7 +7,7 @@ import api from "../../api/axios";
 export default function OrdersList() {
   const [rows, setRows] = useState([]);
   useEffect(() => {
-    api.get("/orders").then((res) => setRows(res.data.items || []));
+    api.get("/orders").then((res) => setRows(res.data.orders || []));
   }, []);
 
   const cols = [

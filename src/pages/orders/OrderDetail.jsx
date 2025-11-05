@@ -42,7 +42,7 @@ export default function OrderDetail() {
     api
       .get(`/orders/${id}`)
       .then((res) => {
-        setOrder(res.data);
+        setOrder(res.data.order);
         setLoading(false);
       })
       .catch((e) => {
