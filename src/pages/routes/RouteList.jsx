@@ -54,7 +54,7 @@ function RouteList() {
           destination: validate.destination,
           distance_km: validate.distance_km,
           eta_minutes: validate.eta_minutes,
-          isActive: true,
+          isActive: validate.active,
         });
         console.log("Update response:", response.data);
         message.success("Updated");
