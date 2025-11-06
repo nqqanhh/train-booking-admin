@@ -2,8 +2,9 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_BASE ||
-    `https://train-booking-backend-6zox.onrender.com/api`,
+    // import.meta.env.VITE_API_BASE ||
+    // `https://train-booking-backend-6zox.onrender.com/api`,
+    import.meta.env.VITE_LOCAL_API_BASE || `http://localhost:9000/api`,
   withCredentials: false,
 });
 

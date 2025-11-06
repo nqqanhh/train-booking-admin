@@ -43,7 +43,7 @@ export default function TicketsList() {
         to: filters.to || undefined,
       };
       const { data } = await api.get("/tickets", { params });
-      const items = data?.items || data?.tickets || data || [];
+      const items = data?.tickets || data || [];
       setRows(items);
       setPagination({
         current: page,
@@ -99,18 +99,18 @@ export default function TicketsList() {
   const cols = [
     { title: "ID", dataIndex: "id", width: 80 },
     { title: "Order Item", dataIndex: "order_item_id", width: 110 },
-    {
-      title: "Trip",
-      dataIndex: ["order_item", "trip_id"],
-      render: (v, r) => r.trip_id || r?.order_item?.trip_id || "-",
-      width: 90,
-    },
-    {
-      title: "Seat",
-      dataIndex: "seat_code",
-      render: (v, r) => r.seat_code || r?.order_item?.seat_code || "-",
-      width: 90,
-    },
+    // {
+    //   title: "Trip",
+    //   dataIndex: ["order_item", "trip_id"],
+    //   render: (v, r) => r.trip_id || r?.order_item?.trip_id || "-",
+    //   width: 90,
+    // },
+    // {
+    //   title: "Seat",
+    //   dataIndex: "seat_code",
+    //   render: (v, r) => r.seat_code || r?.order_item?.seat_code || "-",
+    //   width: 90,
+    // },
     {
       title: "Status",
       dataIndex: "status",
@@ -154,9 +154,15 @@ export default function TicketsList() {
             title="Refund this ticket?"
             onConfirm={() => refund(r.id)}
           >
-            <Button size="small" danger>
-              Refund
-            </Button>
+            {r.status === "refunded" ? (
+              <Button size="small" danger disabled>
+                Refunded
+              </Button>
+            ) : (
+              <Button size="small" danger>
+                Refund
+              </Button>
+            )}
           </Popconfirm>
         </Space>
       ),

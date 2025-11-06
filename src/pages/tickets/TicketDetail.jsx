@@ -22,7 +22,8 @@ export default function TicketDetail() {
     setLoading(true);
     try {
       const { data } = await api.get(`/tickets/${id}`);
-      setTicket(data);
+      setTicket(data.detail);
+
     } catch (e) {
       message.error(e.response?.data?.message || "Load ticket failed");
     } finally {
@@ -59,7 +60,7 @@ export default function TicketDetail() {
   return (
     <Space direction="vertical" size={16} style={{ width: "100%" }}>
       <Card
-        title={`Ticket #${ticket.id}`}
+        title={`Ticket #${ticket.ticket.id}`}
         loading={loading}
         extra={
           <Space>
@@ -67,7 +68,7 @@ export default function TicketDetail() {
             <Button
               type="primary"
               onClick={markUsed}
-              disabled={ticket.status === "used"}
+              disabled={ticket.ticket.status === "used"}
             >
               Mark used
             </Button>
@@ -81,39 +82,47 @@ export default function TicketDetail() {
           <Descriptions.Item label="Status">
             <Tag
               color={
-                ticket.status === "used"
+                ticket.ticket.status === "used"
                   ? "red"
-                  : ticket.status === "issued"
+                  : ticket.ticket.status === "issued"
                   ? "green"
                   : "default"
               }
             >
-              {ticket.status}
+              {ticket.ticket.status}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Order Item">
-            {ticket.order_item_id}
+            {ticket.ticket.order_item_id}
           </Descriptions.Item>
           <Descriptions.Item label="Trip">
-            {ticket.trip_id || ticket.order_item?.trip_id || "-"}
+            {"#" +
+              ticket.trip.id +
+              " (" +
+              ticket.trip.route.origin +
+              "->" +
+              ticket.trip.route.destination +
+              ")" || "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Seat">
-            {ticket.seat_code || ticket.order_item?.seat_code || "-"}
+            {ticket.seat.seat_code || ticket.order_item?.seat_code || "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Issued at">
-            {ticket.issued_at
-              ? new Date(ticket.issued_at).toLocaleString()
+            {ticket.ticket.issued_at
+              ? new Date(ticket.ticket.issued_at).toLocaleString()
               : "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Used at">
-            {ticket.used_at ? new Date(ticket.used_at).toLocaleString() : "-"}
+            {ticket.ticket.used_at
+              ? new Date(ticket.ticket.used_at).toLocaleString()
+              : "Not used"}
           </Descriptions.Item>
         </Descriptions>
 
         <Card type="inner" title="QR payload" style={{ marginTop: 16 }}>
           <Paragraph copyable>
             <Text code>
-              {ticket.qr_payload ||
+              {JSON.stringify(ticket.ticket.qr_payload) ||
                 JSON.stringify({
                   order_item_id: ticket.order_item_id,
                   seat_code: ticket.seat_code,
@@ -122,9 +131,7 @@ export default function TicketDetail() {
           </Paragraph>
           <Space>
             <Link
-              to={`/orders/${
-                ticket.order_item?.order_id || ticket.order_id || ""
-              }`}
+              to={`/orders/${ticket.ticket.order_id || ticket.order_id || ""}`}
             >
               Go to Order
             </Link>
