@@ -233,15 +233,15 @@ export default function ScanTicket() {
       )}
 
       <div style={{ marginTop: 12 }}>
-        {result?.ok ? (
+        {result?.message === "Ticket validated successfully" ? (
           <div style={{ color: "green" }}>
             ✅ Hợp lệ & đã mark USED
             <pre style={{ whiteSpace: "pre-wrap" }}>
-              {JSON.stringify(result.data.ticket, null, 2)}
+              {JSON.stringify(result.ticket, null, 2)}
             </pre>
           </div>
         ) : result ? (
-          <div style={{ color: "crimson" }}>❌ {result.message}</div>
+          <div style={{ color: "crimson" }}>{result.message}</div>
         ) : null}
       </div>
 
