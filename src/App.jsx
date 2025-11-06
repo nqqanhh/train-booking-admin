@@ -18,6 +18,7 @@ import TicketDetail from "./pages/tickets/TicketDetail.jsx";
 // import SupportList from "./pages/support/SupportList";
 // import NotificationsList from "./pages/notifications/NotificationsList";
 import TripSchedulesList from "./pages/schedules/TripSchedulesList.jsx";
+import ScanTicket from "./pages/tickets/ScanTicket.jsx";
 
 export default function App() {
   return (
@@ -142,6 +143,16 @@ export default function App() {
             <ProtectedRoute roles={["admin"]}>
               <AdminLayout>
                 <TicketDetail />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/scanner"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminLayout>
+                <ScanTicket />
               </AdminLayout>
             </ProtectedRoute>
           }
