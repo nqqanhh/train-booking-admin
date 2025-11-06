@@ -117,7 +117,7 @@ export default function TicketDetail() {
               ? new Date(ticket.ticket.used_at).toLocaleString()
               : "Not used"}
           </Descriptions.Item>
-        </Descriptions>
+        </Descriptions> 
 
         <Card type="inner" title="QR payload" style={{ marginTop: 16 }}>
           <Paragraph copyable>
