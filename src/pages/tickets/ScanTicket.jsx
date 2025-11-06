@@ -24,7 +24,9 @@ export default function ScanTicket() {
         setDevices(cams);
         if (!deviceId && cams.length) setDeviceId(cams[0].deviceId);
       } catch (e) {
-        setErrorMsg("Không truy cập được camera. Hãy cấp quyền hoặc dùng HTTPS.");
+        setErrorMsg(
+          "Không truy cập được camera. Hãy cấp quyền hoặc dùng HTTPS."
+        );
       }
     }
     getCams();
@@ -36,6 +38,24 @@ export default function ScanTicket() {
       ? { video: { deviceId: { exact: deviceId } } }
       : { video: { facingMode: "user" } };
   }, [deviceId]);
+
+  // (A) Tìm ticket theo QR (không cần ticket_id)
+  const findTicketByQr = async (qr_payload_str) => {
+    const { data } = await api.post("/tickets/by-qr", {
+      qr_payload: qr_payload_str,
+    });
+    // server nên trả { message: 'OK', ticket: {...} }
+    return data.ticket; // { id, status, ... }
+  };
+
+  // (B) Validate (nếu muốn mark USED ngay sau khi tìm thấy)
+  const validateTicket = async (ticketId, qr_payload, tripIdOptional) => {
+    const { data } = await api.post(`/tickets/${ticketId}/validate`, {
+      qr_payload,
+      trip_id: tripIdOptional ? Number(tripIdOptional) : undefined,
+    });
+    return data; // { message, ticket }
+  };
 
   // --- mở stream cho PREVIEW riêng (cùng deviceId) ---
   useEffect(() => {
@@ -81,21 +101,6 @@ export default function ScanTicket() {
       }
     };
   }, [deviceId]);
-
-  const validate = async ({ id, qr_payload }) => {
-    try {
-      const { data } = await api.post(`/tickets/${id}/validate`, {
-        qr_payload,
-        trip_id: tripId ? Number(tripId) : undefined,
-      });
-      setResult({ ok: true, data });
-    } catch (e) {
-      const msg = e?.response?.data?.message || "Validate failed";
-      setResult({ ok: false, message: msg });
-    } finally {
-      setTimeout(() => (lockRef.current = false), 1000);
-    }
-  };
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
@@ -144,7 +149,8 @@ export default function ScanTicket() {
             }}
           />
           <div style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
-            (Preview dùng chung camera đang chọn; nếu chưa thấy ảnh, hãy Allow camera.)
+            (Preview dùng chung camera đang chọn; nếu chưa thấy ảnh, hãy Allow
+            camera.)
           </div>
         </div>
 
@@ -154,29 +160,55 @@ export default function ScanTicket() {
           <div style={{ width: "100%", overflow: "hidden", borderRadius: 8 }}>
             <QrReader
               constraints={constraints}
-              onResult={(res, err) => {
-                if (err) return;
-                if (!res) return;
+              onResult={async (res, err) => {
+                if (err || !res) return;
                 if (lockRef.current) return;
                 lockRef.current = true;
 
-                const raw = res?.getText?.() || res?.text || "";
-                if (!raw) {
-                  lockRef.current = false;
-                  return;
-                }
+                try {
+                  const raw = res?.getText?.() || res?.text || "";
+                  if (!raw) {
+                    lockRef.current = false;
+                    return;
+                  }
 
-                let payload = null;
-                try { payload = JSON.parse(raw); } catch {}
-                let ticketId = payload?.ticket_id;
-                if (!ticketId) {
-                  ticketId = window.prompt("Nhập Ticket ID (QR không chứa ticket_id):");
-                  if (!ticketId) { lockRef.current = false; return; }
+                  //
+                  let qr_payload_str = raw;
+                  try {
+                    const obj = JSON.parse(raw);
+                    if (obj && typeof maybeObj === "object") {
+                      qr_payload_str = JSON.stringify(obj);
+                    }
+                  } catch {}
+
+                  // 1) Tìm ticket theo /api/tickets/by-qr
+                  const ticket = await findTicketByQr(qr_payload_str); // throws nếu 404
+                  setResult({ step: "found", ticket });
+
+                  // 2) Validate luôn
+                  const validated = await validateTicket(
+                    ticket.id,
+                    qr_payload_str,
+                    tripId
+                  );
+                  setResult({ step: "validated", ...validated });
+                } catch (e) {
+                  const msg =
+                    e?.response?.data?.message ||
+                    e?.message ||
+                    "Xử lý QR thất bại";
+                  setResult({ error: true, message: msg });
+                } finally {
+                  // mở khóa sau 1s để cho quét lại
+                  setTimeout(() => (lockRef.current = false), 1000);
                 }
-                validate({ id: ticketId, qr_payload: payload || raw });
               }}
               containerStyle={{ width: "100%" }}
-              videoStyle={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover" }}
+              videoStyle={{
+                width: "100%",
+                aspectRatio: "4 / 3",
+                objectFit: "cover",
+              }}
             />
           </div>
           {/* overlay khung scan (tuỳ chọn) */}
@@ -196,7 +228,9 @@ export default function ScanTicket() {
         </div>
       </div>
 
-      {errorMsg && <div style={{ color: "#c00", marginTop: 8 }}>{errorMsg}</div>}
+      {errorMsg && (
+        <div style={{ color: "#c00", marginTop: 8 }}>{errorMsg}</div>
+      )}
 
       <div style={{ marginTop: 12 }}>
         {result?.ok ? (
