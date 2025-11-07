@@ -49,6 +49,7 @@ export default function OrderDetail() {
         setLoading(false);
         message.error(e.response?.data?.message || e.message);
       });
+    setLoading(false);
   }, [id]);
 
   const succeededPay = useMemo(
@@ -109,7 +110,7 @@ export default function OrderDetail() {
     { title: "Item ID", dataIndex: "id", width: 100 },
     { title: "Trip", dataIndex: "trip_id", width: 100 },
     { title: "Seat", dataIndex: "seat_code", width: 120 },
-    { title: "Passenger", dataIndex: "passenger_id", width: 120 },
+    { title: "Passenger", render: (v) => v.passenger.full_name, width: 120 },
     {
       title: "Price",
       dataIndex: "price",
