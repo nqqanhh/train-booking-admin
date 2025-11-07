@@ -58,11 +58,11 @@ const items = [
     icon: <ShoppingCartOutlined />,
     label: <Link to="/orders">Orders</Link>,
   },
-  {
-    key: "/payments",
-    icon: <CreditCardOutlined />,
-    label: <Link to="/payments">Payments</Link>,
-  },
+  // {
+  //   key: "/payments",
+  //   icon: <CreditCardOutlined />,
+  //   label: <Link to="/payments">Payments</Link>,
+  // },
   {
     key: "/tickets",
     icon: <QrcodeOutlined />,
@@ -73,11 +73,11 @@ const items = [
     icon: <CustomerServiceOutlined />,
     label: <Link to="/support">Support</Link>,
   },
-  {
-    key: "/notifications",
-    icon: <NotificationOutlined />,
-    label: <Link to="/notifications">Notifications</Link>,
-  },
+  // {
+  //   key: "/notifications",
+  //   icon: <NotificationOutlined />,
+  //   label: <Link to="/notifications">Notifications</Link>,
+  // },
 ];
 
 export default function AdminLayout({ children }) {
